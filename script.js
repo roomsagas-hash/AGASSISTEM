@@ -1,3 +1,5 @@
+import { app, analytics } from './src/firebaseConfig.js';
+
 // ---------- DADOS ----------
 let reservas = JSON.parse(localStorage.getItem("reservas")) || [];
 let users = JSON.parse(localStorage.getItem("users")) || [];
@@ -209,3 +211,4 @@ document.getElementById("logoffBtn").addEventListener("click", logoff);
 
 // ---------- INICIALIZAÇÃO ----------
 if(loggedUser && users.some(u=>u.username===loggedUser)) showMain(); else showLogin();
+
