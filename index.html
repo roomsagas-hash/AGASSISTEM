@@ -26,7 +26,6 @@
       <button class="book-btn" onclick="login()">Entrar</button>
       <div class="login-links">
         <a onclick="showRegister()">Criar Conta</a>
-        <a onclick="showRecovery()">Recuperar Senha</a>
       </div>
     </div>
 
@@ -45,15 +44,6 @@
       <button class="book-btn" style="background:#999;" onclick="showLogin()">Voltar</button>
     </div>
 
-    <!-- RECUPERAR SENHA -->
-    <div id="recoverySection" style="display:none;">
-      <h2>Recuperar Senha</h2>
-      <input type="text" id="recUsername" placeholder="Usuário"><br><br>
-      <button class="book-btn" onclick="askQuestion()">Próximo</button>
-      <button class="book-btn" style="background:#999;" onclick="showLogin()">Voltar</button>
-      <div id="securityQuestion" style="margin-top:15px;display:none;"></div>
-    </div>
-
     <!-- SISTEMA -->
     <div id="mainSection" style="display:none;">
       <div class="tabs">
@@ -70,7 +60,7 @@
           <select id="horaInicio"></select>
           <select id="horaFim"></select>
         </div>
-        <button class="book-btn" id="bookBtn">Agendar Reunião</button>
+        <button class="book-btn" id="bookBtn" onclick="createReservation()">Agendar Reunião</button>
         <div class="meeting-list">
           <h3>Reuniões Agendadas</h3>
           <table id="meetingTable">
@@ -89,28 +79,28 @@
         </div>
       </div>
 
-      <!-- USUARIOS (só ADM) -->
+      <!-- USUARIOS (ADM) -->
       <div id="tabUsuarios" style="display:none;">
         <h2>Gerenciar Usuários</h2>
-        <div class="users-list">
-          <table id="usersTable">
-            <thead>
-              <tr>
-                <th>Usuário</th>
-                <th>Tipo</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <table id="usersTable">
+          <thead>
+            <tr>
+              <th>Usuário</th>
+              <th>Tipo</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-<!-- Firebase precisa ser importado antes -->
-<script type="module" src="./firebaseConfig.js"></script>
+  <!-- Firebase Config -->
+  <script type="module" src="./firebaseConfig.js"></script>
+  <!-- Script Principal -->
+  <script type="module" src="./script.js"></script>
+</body>
+</html>
 
-<!-- Seu script principal -->
-<script type="module" src="./script.js"></script>
 
