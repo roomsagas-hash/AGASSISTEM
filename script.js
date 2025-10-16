@@ -1,14 +1,12 @@
-import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-
-// ---------- FIREBASE ----------
-const db = window.db;
+// script.js
+import { db } from "./firebaseConfig.js";
+import { collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 // ---------- VARIÁVEIS ----------
 let loggedUser = null;
 let userObj = null;
 
 // ---------- FUNÇÕES DE USUÁRIO ----------
-
 async function getUsers() {
   const snapshot = await getDocs(collection(db, "usuarios"));
   const users = [];
@@ -60,7 +58,6 @@ function logoff() {
 }
 
 // ---------- FUNÇÕES DE RESERVAS ----------
-
 async function loadReservations() {
   const snapshot = await getDocs(collection(db, "agendamentos"));
   const reservas = [];
@@ -114,7 +111,6 @@ async function editar(id) {
 }
 
 // ---------- RENDERIZAÇÃO ----------
-
 async function renderTable() {
   const tableBody = document.querySelector("#meetingTable tbody");
   tableBody.innerHTML = "";
@@ -144,65 +140,7 @@ async function renderTable() {
   });
 }
 
-// ---------- GERENCIAMENTO DE USUÁRIOS (ADM) ----------
-
-async function renderUsersTable() {
-  if (!userObj || userObj.tipoUsuario !== "adm") return;
-  const users = await getUsers();
-  const tbody = document.querySelector("#usersTable tbody");
-  tbody.innerHTML = "";
-
-  users.forEach(u => {
-    const actions = u.usuario !== "adm" ? `
-      <button class="action-btn delete-btn" onclick="deleteUser('${u.id}')">Excluir</button>
-      <button class="action-btn reset-btn" onclick="forceReset('${u.id}')">Redefinir Senha</button>
-      <button class="action-btn promote-btn" onclick="toggleAdmin('${u.id}', '${u.tipoUsuario}')">${u.tipoUsuario === "adm" ? "Rebaixar" : "Promover"} ADM</button>
-      <button class="action-btn edit-btn" onclick="editUserName('${u.id}', '${u.usuario}')">Ajustar</button>
-    ` : `<span class="view-only">Protegido</span>`;
-
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${u.usuario}</td>
-      <td>${u.tipoUsuario}</td>
-      <td>${actions}</td>
-    `;
-    tbody.appendChild(row);
-  });
-}
-
-async function deleteUser(id) {
-  if (!confirm("Deseja excluir este usuário?")) return;
-  await deleteDoc(doc(db, "usuarios", id));
-  renderUsersTable();
-  renderTable();
-}
-
-async function forceReset(id) {
-  const newPass = prompt("Digite a nova senha:");
-  if (!newPass) return;
-  await updateDoc(doc(db, "usuarios", id), { senha: newPass });
-  alert("Senha redefinida!");
-}
-
-async function toggleAdmin(id, tipoAtual) {
-  const novoTipo = tipoAtual === "adm" ? "usuário" : "adm";
-  await updateDoc(doc(db, "usuarios", id), { tipoUsuario: novoTipo });
-  renderUsersTable();
-}
-
-async function editUserName(id, oldName) {
-  const newName = prompt("Digite o novo nome de usuário:", oldName);
-  if (!newName) return;
-  const q = query(collection(db, "usuarios"), where("usuario", "==", newName));
-  const querySnapshot = await getDocs(q);
-  if (!querySnapshot.empty) return alert("Nome já em uso!");
-
-  await updateDoc(doc(db, "usuarios", id), { usuario: newName });
-  renderUsersTable();
-}
-
 // ---------- INTERFACE ----------
-
 function showLogin() {
   document.getElementById("loginSection").style.display = "block";
   document.getElementById("registerSection").style.display = "none";
@@ -226,9 +164,11 @@ function showMain() {
   document.getElementById("statusBar").innerText = `Usuário: ${loggedUser} ${userObj?.tipoUsuario === "adm" ? "(ADM)" : ""}`;
 
   renderTable();
-  renderUsersTable();
 }
 
-// ---------- EVENTOS ----------
-document.getElementById("logoffBtn").addEventListener("click", logoff);
-document.getElementById("bookBtn").addEventListener("click", createReservation);
+// ---------- EXPOR FUNÇÕES PARA HTML ----------
+window.login = login;
+window.register = register;
+window.showLogin = showLogin;
+window.showRegister = showRegister;
+window.logoff = logoff;
