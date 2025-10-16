@@ -3,9 +3,10 @@ let reservas = JSON.parse(localStorage.getItem("reservas")) || [];
 let users = JSON.parse(localStorage.getItem("users")) || [];
 let loggedUser = localStorage.getItem("loggedUser") || null;
 
+// Cria admin padrão caso não exista
 if (!users.some(u => u.username === "adm")) {
   users.push({ username: "adm", password: "1234", question: "Padrão", answer: "1234", isAdmin: true });
-  saveData();
+  localStorage.setItem("users", JSON.stringify(users));
 }
 
 const horarios = [];
@@ -178,3 +179,4 @@ function renderUsersTable() {
             <button class="action-btn delete-btn" onclick="deleteUser('${u.username}')">Excluir</button>
             <button class="action-btn reset-btn" onclick="forceReset('${u.username}')">Redefinir Senha</button>
             <button class="
+
