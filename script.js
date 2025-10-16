@@ -1,157 +1,144 @@
-import { app, analytics } from './src/firebaseConfig.js';
+import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-// ---------- DADOS ----------
-let reservas = JSON.parse(localStorage.getItem("reservas")) || [];
-let users = JSON.parse(localStorage.getItem("users")) || [];
-let loggedUser = localStorage.getItem("loggedUser") || null;
+// Referência global ao Firestore
+const db = window.db;
 
-// Cria admin padrão caso não exista
-if (!users.some(u => u.username === "adm")) {
-  users.push({ username: "adm", password: "1234", question: "Padrão", answer: "1234", isAdmin: true });
-  localStorage.setItem("users", JSON.stringify(users));
+// Usuário logado
+let loggedUser = null;
+let userObj = null;
+
+// ---------- FUNÇÕES DE USUÁRIO ----------
+
+// Pegar todos os usuários
+async function getUsers() {
+  const snapshot = await getDocs(collection(db, "usuarios"));
+  const users = [];
+  snapshot.forEach(doc => users.push({ id: doc.id, ...doc.data() }));
+  return users;
 }
 
-// ---------- HORÁRIOS ----------
-const horarios = [];
-for (let h = 7; h <= 18; h++) {
-  horarios.push((h < 10 ? "0"+h : h)+":00");
-  horarios.push((h < 10 ? "0"+h : h)+":30");
+// Registrar novo usuário
+async function register() {
+  const username = document.getElementById("regUsername").value.trim();
+  const password = document.getElementById("regPassword").value.trim();
+  const question = document.getElementById("regQuestion").value.trim();
+  const answer = document.getElementById("regAnswer").value.trim();
+  if (!username || !password || !question || !answer) return alert("Preencha todos os campos!");
+
+  // Verificar se usuário existe
+  const q = query(collection(db, "usuarios"), where("usuario", "==", username));
+  const querySnapshot = await getDocs(q);
+  if (!querySnapshot.empty) return alert("Usuário já existe!");
+
+  await addDoc(collection(db, "usuarios"), {
+    usuario: username,
+    senha: password,
+    nome: username,
+    palavraChave: question,
+    tipoUsuario: "usuário"
+  });
+
+  alert("Usuário registrado com sucesso!");
+  showLogin();
 }
 
-const horaInicioSelect = document.getElementById('horaInicio');
-const horaFimSelect = document.getElementById('horaFim');
-horarios.forEach(h => {
-  horaInicioSelect.add(new Option(h, h));
-  horaFimSelect.add(new Option(h, h));
-});
+// Login
+async function login() {
+  const username = document.getElementById("loginUsername").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
 
-const tableBody = document.querySelector("#meetingTable tbody");
+  const q = query(collection(db, "usuarios"), where("usuario", "==", username), where("senha", "==", password));
+  const querySnapshot = await getDocs(q);
 
-// ---------- FUNÇÕES ----------
-function saveData() {
-  localStorage.setItem("reservas", JSON.stringify(reservas));
-  localStorage.setItem("users", JSON.stringify(users));
+  if (querySnapshot.empty) return alert("Usuário ou senha incorretos!");
+
+  const user = querySnapshot.docs[0].data();
+  loggedUser = user.usuario;
+  userObj = user;
+  showMain();
 }
 
-function renderTable() {
+// Logout
+function logoff() {
+  loggedUser = null;
+  userObj = null;
+  showLogin();
+}
+
+// ---------- FUNÇÕES DE RESERVAS ----------
+
+// Pegar todas reservas
+async function loadReservations() {
+  const snapshot = await getDocs(collection(db, "agendamentos"));
+  const reservas = [];
+  snapshot.forEach(doc => reservas.push({ id: doc.id, ...doc.data() }));
+  return reservas;
+}
+
+// Criar reserva
+async function createReservation() {
+  const titulo = document.getElementById("titulo").value;
+  const data = document.getElementById("data").value;
+  const inicio = document.getElementById("horaInicio").value;
+  const fim = document.getElementById("horaFim").value;
+
+  if (!titulo || !data || !inicio || !fim) return alert("Preencha todos os campos!");
+  if (inicio >= fim) return alert("Fim deve ser depois do início!");
+
+  const reservas = await loadReservations();
+  if (reservas.some(r => r.data === data && ((inicio >= r.horarioInicio && inicio < r.horarioFim) || (fim > r.horarioInicio && fim <= r.horarioFim) || (inicio <= r.horarioInicio && fim >= r.horarioFim)))) {
+    return alert("Já existe uma reserva nesse intervalo!");
+  }
+
+  await addDoc(collection(db, "agendamentos"), {
+    titulo,
+    organizador: loggedUser,
+    data,
+    horarioInicio: inicio,
+    horarioFim: fim
+  });
+
+  renderTable();
+}
+
+// Excluir reserva
+async function excluir(id) {
+  await deleteDoc(doc(db, "agendamentos", id));
+  renderTable();
+}
+
+// ---------- RENDERIZAÇÃO ----------
+
+async function renderTable() {
+  const tableBody = document.querySelector("#meetingTable tbody");
   tableBody.innerHTML = "";
-  const userObj = users.find(u => u.username === loggedUser);
-  reservas.forEach((r, index) => {
-    const row = document.createElement("tr");
+
+  const reservas = await loadReservations();
+  reservas.forEach(r => {
     let actionBtns = "";
-    if (userObj?.isAdmin || r.organizador === loggedUser) {
+    if (userObj?.tipoUsuario === "adm" || r.organizador === loggedUser) {
       actionBtns = `
-        <button class="action-btn edit-btn" onclick="editar(${index})">Editar</button>
-        <button class="action-btn delete-btn" onclick="excluir(${index})">Excluir</button>
+        <button class="action-btn edit-btn" onclick="editar('${r.id}')">Editar</button>
+        <button class="action-btn delete-btn" onclick="excluir('${r.id}')">Excluir</button>
       `;
     } else {
       actionBtns = `<span class="view-only">Visualização</span>`;
     }
+
+    const row = document.createElement("tr");
     row.innerHTML = `
       <td>${r.titulo}</td>
       <td>${r.organizador}</td>
       <td>${r.data}</td>
-      <td>${r.inicio}</td>
-      <td>${r.fim}</td>
+      <td>${r.horarioInicio}</td>
+      <td>${r.horarioFim}</td>
       <td>${actionBtns}</td>
     `;
     tableBody.appendChild(row);
   });
 }
 
-// ---------- RESERVAS ----------
-document.getElementById("bookBtn").addEventListener("click", () => {
-  const titulo = document.getElementById("titulo").value;
-  const data = document.getElementById("data").value;
-  const inicio = horaInicioSelect.value;
-  const fim = horaFimSelect.value;
-  if (!titulo || !data || !inicio || !fim) return alert("Preencha todos os campos!");
-  if (horarios.indexOf(inicio) >= horarios.indexOf(fim)) return alert("Fim deve ser depois do início!");
-  if (reservas.some(r => r.data === data && ((inicio >= r.inicio && inicio < r.fim) || (fim > r.inicio && fim <= r.fim) || (inicio <= r.inicio && fim >= r.fim)))) {
-    return alert("Já existe uma reserva nesse intervalo!");
-  }
-  reservas.push({ titulo, organizador: loggedUser, data, inicio, fim });
-  saveData(); renderTable();
-});
-
-window.excluir = i => { reservas.splice(i, 1); saveData(); renderTable(); };
-window.editar = i => {
-  const r = reservas[i];
-  document.getElementById("titulo").value = r.titulo;
-  document.getElementById("data").value = r.data;
-  horaInicioSelect.value = r.inicio;
-  horaFimSelect.value = r.fim;
-  reservas.splice(i, 1);
-  saveData(); renderTable();
-};
-
-// ---------- LOGIN ----------
-function login() {
-  const username = document.getElementById("loginUsername").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
-  const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-  if (!user) return alert("Usuário ou senha incorretos!");
-  loggedUser = user.username;
-  localStorage.setItem("loggedUser", loggedUser);
-  showMain();
-}
-
-// Enter permite login
-document.getElementById("loginUsername").addEventListener("keyup", e => { if(e.key==="Enter") login(); });
-document.getElementById("loginPassword").addEventListener("keyup", e => { if(e.key==="Enter") login(); });
-
-// ---------- REGISTRO ----------
-function register() {
-  const username = document.getElementById("regUsername").value.trim();
-  const password = document.getElementById("regPassword").value.trim();
-  const question = document.getElementById("regQuestion").value.trim();
-  const answer = document.getElementById("regAnswer").value.trim();
-  if (!username || !password || !question || !answer) return alert("Preencha todos os campos!");
-  if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) return alert("Usuário já existe!");
-  users.push({ username, password, question, answer, isAdmin: false });
-  saveData(); alert("Usuário registrado com sucesso!"); showLogin();
-}
-
-// ---------- RECUPERAÇÃO DE SENHA ----------
-function askQuestion() {
-  const username = document.getElementById("recUsername").value.trim();
-  const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-  if (!user) return alert("Usuário não encontrado!");
-  const div = document.getElementById("securityQuestion");
-  div.style.display = "block";
-  div.innerHTML = `
-    <p>${user.question}</p>
-    <input type="text" id="recAnswer" placeholder="Resposta"><br><br>
-    <input type="password" id="newPassword" placeholder="Nova senha"><br><br>
-    <button class="book-btn" onclick="resetPassword('${user.username}')">Redefinir Senha</button>
-  `;
-}
-
-function resetPassword(username) {
-  const user = users.find(u => u.username === username);
-  const answer = document.getElementById("recAnswer").value.trim();
-  const newPass = document.getElementById("newPassword").value.trim();
-  if (answer !== user.answer) return alert("Resposta incorreta!");
-  if (!newPass) return alert("Digite uma nova senha!");
-  user.password = newPass; saveData(); alert("Senha redefinida!"); showLogin();
-}
-
-// ---------- LOGOFF ----------
-function logoff() { loggedUser=null; localStorage.removeItem("loggedUser"); showLogin(); }
-
-// ---------- TELA PRINCIPAL ----------
-function showMain() {
-  document.getElementById("loginSection").style.display = "none";
-  document.getElementById("registerSection").style.display = "none";
-  document.getElementById("recoverySection").style.display = "none";
-  document.getElementById("mainSection").style.display = "block";
-  document.getElementById("logoffBtn").style.display = "inline-block";
-  const userObj = users.find(u => u.username === loggedUser);
-  document.getElementById("statusBar").innerText = `Usuário: ${loggedUser} ${userObj?.isAdmin ? "(ADM)" : ""}`;
-  if (userObj?.isAdmin) document.getElementById("usuariosTabBtn").style.display = "inline-block";
-  else document.getElementById("usuariosTabBtn").style.display = "none";
-  renderTable(); renderUsersTable();
-}
+// ---------- INTERFACE ----------
 
 function showLogin() {
   document.getElementById("loginSection").style.display = "block";
@@ -159,56 +146,24 @@ function showLogin() {
   document.getElementById("recoverySection").style.display = "none";
   document.getElementById("mainSection").style.display = "none";
   document.getElementById("logoffBtn").style.display = "none";
+  document.getElementById("statusBar").innerText = "";
 }
 
-function showRegister() { document.getElementById("loginSection").style.display="none"; document.getElementById("registerSection").style.display="block"; }
-function showRecovery() { document.getElementById("loginSection").style.display="none"; document.getElementById("recoverySection").style.display="block"; document.getElementById("securityQuestion").style.display="none"; }
-
-// ---------- ABAS ----------
-function switchTab(tab) {
-  document.querySelectorAll(".tab").forEach(btn=>btn.classList.remove("active"));
-  if(tab==="horarios"){ 
-    document.querySelector("#tabHorarios").style.display="block"; 
-    document.querySelector("#tabUsuarios").style.display="none"; 
-    document.querySelectorAll(".tab")[0].classList.add("active"); 
-  } else { 
-    document.querySelector("#tabHorarios").style.display="none"; 
-    document.querySelector("#tabUsuarios").style.display="block"; 
-    document.querySelectorAll(".tab")[1].classList.add("active"); 
-  }
+function showRegister() {
+  document.getElementById("loginSection").style.display = "none";
+  document.getElementById("registerSection").style.display = "block";
 }
 
-// ---------- USUÁRIOS ----------
-function renderUsersTable() {
-  const userObj = users.find(u=>u.username===loggedUser);
-  if(!userObj||!userObj.isAdmin) return;
-  const tbody = document.querySelector("#usersTable tbody");
-  tbody.innerHTML="";
-  users.forEach(u=>{
-    tbody.innerHTML+=`
-      <tr>
-        <td>${u.username}</td>
-        <td>${u.isAdmin?"ADM":"Usuário"}</td>
-        <td>
-          ${u.username!=="adm"?`
-            <button class="action-btn delete-btn" onclick="deleteUser('${u.username}')">Excluir</button>
-            <button class="action-btn reset-btn" onclick="forceReset('${u.username}')">Redefinir Senha</button>
-            <button class="action-btn promote-btn" onclick="toggleAdmin('${u.username}')">${u.isAdmin?"Rebaixar":"Promover"} ADM</button>
-            <button class="action-btn edit-btn" onclick="editUserName('${u.username}')">Ajustar</button>
-          `:`<span class="view-only">Protegido</span>`}
-        </td>
-      </tr>
-    `;
-  });
+function showMain() {
+  document.getElementById("loginSection").style.display = "none";
+  document.getElementById("registerSection").style.display = "none";
+  document.getElementById("mainSection").style.display = "block";
+  document.getElementById("logoffBtn").style.display = "inline-block";
+  document.getElementById("statusBar").innerText = `Usuário: ${loggedUser} ${userObj?.tipoUsuario === "adm" ? "(ADM)" : ""}`;
+  renderTable();
 }
 
-window.deleteUser=function(username){ if(!confirm("Excluir usuário "+username+"?")) return; users=users.filter(u=>u.username!==username); reservas=reservas.filter(r=>r.organizador!==username); saveData(); renderUsersTable(); renderTable(); }
-window.forceReset=function(username){ const newPass=prompt("Digite a nova senha para "+username+":"); if(!newPass) return; const user=users.find(u=>u.username===username); if(user){ user.password=newPass; saveData(); alert("Senha redefinida!"); } }
-window.toggleAdmin=function(username){ const user=users.find(u=>u.username===username); if(user){ user.isAdmin=!user.isAdmin; saveData(); renderUsersTable(); } }
-window.editUserName=function(username){ const newName=prompt("Digite o novo nome de usuário:",username); if(!newName) return; if(users.some(u=>u.username.toLowerCase()===newName.toLowerCase())){ alert("Esse nome já está em uso!"); return; } const user=users.find(u=>u.username===username); if(user){ reservas.forEach(r=>{ if(r.organizador===user.username) r.organizador=newName; }); user.username=newName; saveData(); renderUsersTable(); renderTable(); alert("Nome de usuário atualizado com sucesso!"); } }
+// ---------- EVENTOS ----------
 
 document.getElementById("logoffBtn").addEventListener("click", logoff);
-
-// ---------- INICIALIZAÇÃO ----------
-if(loggedUser && users.some(u=>u.username===loggedUser)) showMain(); else showLogin();
-
+document.getElementById("bookBtn").addEventListener("click", createReservation);
