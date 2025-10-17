@@ -1,5 +1,6 @@
-import { db } from "./firebaseConfig.js";
-import { collection, addDoc, getDocs, query, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { db } from "./src/firebaseConfig.js";
+import { collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
 
 let loggedUser = null;
 let userObj = null;
@@ -100,3 +101,4 @@ window.showRegister = showRegister;
 window.logoff = logoff;
 window.createReservation = createReservation;
 window.excluir = excluir;
+
