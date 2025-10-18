@@ -1,4 +1,4 @@
-import { db } from "./src/firebaseConfig.js";
+import { db } from "./srcfirebaseConfig.js";
 import { collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 
@@ -101,4 +101,5 @@ window.showRegister = showRegister;
 window.logoff = logoff;
 window.createReservation = createReservation;
 window.excluir = excluir;
+
 
