@@ -1,21 +1,22 @@
-// Importa as funções necessárias dos SDKs
+// Importa as funções dos SDKs necessários
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
 // Configuração do Firebase do seu aplicativo web
 const firebaseConfig = {
-  apiKey: "AIzaSyDAwONtoCt_V58d3IWstkak6aK5vkBwdks",
-  authDomain: "agas-5ba41.firebaseapp.com",
-  databaseURL: "https://agas-5ba41-default-rtdb.firebaseio.com",
-  projectId: "agas-5ba41",
-  storageBucket: "agas-5ba41.firebasestorage.app",
-  messagingSenderId: "389907250431",
-  appId: "1:389907250431:web:a26f89ab3c1c428f167cb2",
-  measurementId: "G-PqR26VX3NV"
+  apiKey: "AIzaSyDAwN0tOct_V5Bd13WstakGaK5vBkwdks",
+  authDomain: "agas-5b4a1.firebaseapp.com",
+  projectId: "agas-5b4a1",
+  storageBucket: "agas-5b4a1.appspot.com",
+  messagingSenderId: "38990725431",
+  appId: "1:38990725431:web:a26f89ab31c428f167cb2",
+  measurementId: "G-PqR26VGX3N"
 };
 
-// Inicializa Firebase
+// Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-export const db = getFirestore(app);
+const db = getFirestore(app);
+
+export { db };
