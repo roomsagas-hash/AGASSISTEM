@@ -1,22 +1,24 @@
-// Importa as funções dos SDKs necessários
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-// Configuração do Firebase do seu aplicativo web
-const firebaseConfig = {
-  apiKey: "AIzaSyDAwN0tOct_V5Bd13WstakGaK5vBkwdks",
-  authDomain: "agas-5b4a1.firebaseapp.com",
-  projectId: "agas-5b4a1",
-  storageBucket: "agas-5b4a1.appspot.com",
-  messagingSenderId: "38990725431",
-  appId: "1:38990725431:web:a26f89ab31c428f167cb2",
-  measurementId: "G-PqR26VGX3N"
-};
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDCAwnOEtcZ_v583dJWstak6ak5vkBvdks",
+    authDomain: "agas-5ba41.firebaseapp.com",
+    databaseURL: "https://agas-5ba41-default-rtdb.firebaseio.com",
+    projectId: "agas-5ba41",
+    storageBucket: "agas-5ba41.firebasestorage.app",
+    messagingSenderId: "389307205431",
+    appId: "1:389307205431:web:a26f89abc31c428f167cb2",
+    measurementId: "G-PQ8Z6NX3VN"
+  };
 
-// Inicializa o Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getFirestore(app);
-
-export { db };
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
